@@ -1,0 +1,1 @@
+makecert -r -pe -n "CN=%1" -b 05/01/2016 -e 05/01/2021 -eku 1.3.6.1.5.5.7.3.3 -sky signature -a sha256 -len 2048 -ss my -sr LocalMachine
