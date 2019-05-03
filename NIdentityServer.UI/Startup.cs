@@ -1,66 +1,31 @@
-﻿using Autofac;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using NIdentityServer.UI.Extensions;
 
-namespace NIdentityServerUI
+namespace Fiver.Security.AuthServer
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public void ConfigureServices(
+            IServiceCollection services)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-                .AddEnvironmentVariables();
-
-            Configuration = builder.Build();
+            services.AddMvc();
+            services.AddIdentityServer()
+                        .AddDeveloperSigningCredential(filename: "tempkey.rsa")
+                        .AddInMemoryApiResources(Config.GetApiResources())
+                        .AddInMemoryIdentityResources(Config.GetIdentityResources())
+                        .AddInMemoryClients(Config.GetClients())
+                        .AddTestUsers(Config.GetUsers());
         }
 
-        public IContainer ApplicationContainer { get; }
-
-        public IConfiguration Configuration { get; }
-
-        public void ConfigureServices(IServiceCollection services)
+        public void Configure(
+            IApplicationBuilder app, 
+            IHostingEnvironment envloggerFactory)
         {
-            services.Configure<CookiePolicyOptions>(options =>
-            {
-                options.CheckConsentNeeded = context => true;
-                options.MinimumSameSitePolicy = SameSiteMode.None;
-            });
-
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
-            services.ConfigureIdentityServer(Configuration);
-        }
-
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
+            app.UseDeveloperExceptionPage();
+            app.UseIdentityServer();
             app.UseStaticFiles();
-            app.UseCookiePolicy();
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
-            });
+            app.UseMvcWithDefaultRoute();
         }
     }
 }
